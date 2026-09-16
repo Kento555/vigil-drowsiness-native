@@ -6,12 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#f2f2f3"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.vigil.drowsiness",
@@ -26,13 +20,11 @@
         "backgroundColor": "#0a0e0d"
       },
       "package": "com.vigil.drowsiness",
-      "minSdkVersion": 26,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.VIBRATE",
         "android.permission.WAKE_LOCK"
-      ],
-      "edgeToEdgeEnabled": true
+      ]
     },
     "plugins": [
       "expo-router",
@@ -44,7 +36,26 @@
           "enableMicrophonePermission": false
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      "expo-audio",
+      "expo-asset",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#f2f2f3"
+        }
+      ],
+      "expo-status-bar"
     ],
     "scheme": "vigil",
     "extra": {

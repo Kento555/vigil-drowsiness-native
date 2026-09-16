@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   watchingChipText: { fontFamily: fonts.heading, fontSize: 11, letterSpacing: 1.5, color: colors.accentDark },
   previewFrame: { marginHorizontal: 24, aspectRatio: 4 / 3, backgroundColor: colors.accentDarker, overflow: 'hidden' },
   previewFallback: { backgroundColor: colors.accentDarker },
-  previewShade: { ...StyleSheet.absoluteFillObject },
+  previewShade: { ...StyleSheet.absoluteFill },
   previewLabel: {
     position: 'absolute', left: '10%', bottom: '30%', fontFamily: fonts.heading, fontSize: 10,
     letterSpacing: 2, color: colors.accentLighter,

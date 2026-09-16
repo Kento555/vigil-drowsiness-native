@@ -21,7 +21,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <SettingsProvider>
-        <StatusBar style="dark" backgroundColor={colors.bg} />
+        <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="index" />

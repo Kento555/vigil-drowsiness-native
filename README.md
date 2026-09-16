@@ -3,6 +3,22 @@
 React Native (Expo) version of VIGIL for Play Store distribution.
 Uses **ML Kit Face Detection** via `react-native-vision-camera` instead of MediaPipe.
 
+## Framework and technology stack
+
+This app uses **React Native with Expo**, written in **TypeScript**. The versions below reflect the current `package.json`.
+
+| Technology | Version | Purpose |
+|---|---|---|
+| Expo | SDK 57 (`~57.0.23`) | Native app tooling and device APIs |
+| React Native | `0.86.3` | Native Android and iOS user interfaces |
+| React | `19.2.3` | Components and UI state |
+| TypeScript | `~6.0.3` | Development-time type checking and editor support |
+| Expo Router | `~57.0.21` | File-based navigation in the `app/` directory |
+
+Supporting libraries include Vision Camera and ML Kit for camera-based face detection, Supabase for authentication and data sync, and Expo Audio, Haptics, and Speech for alerts.
+
+TypeScript adds type checks to JavaScript; its types are removed during the build. JavaScript could support the same app features, but this project uses TypeScript to help catch mistakes during development.
+
 ## Key differences from the web version
 
 | Feature | Web (PWA) | Native (this) |
@@ -11,7 +27,7 @@ Uses **ML Kit Face Detection** via `react-native-vision-camera` instead of Media
 | Camera | Browser getUserMedia | react-native-vision-camera |
 | Background | Not supported (browser limit) | Possible with native service |
 | Distribution | PWA / browser | Google Play Store |
-| Alarm | Web Audio API | expo-av + expo-haptics |
+| Alarm | Web Audio API | expo-audio + expo-haptics + expo-speech |
 
 ## Setup
 
@@ -57,5 +73,5 @@ lib/
   supabase.ts         # Supabase client + event sync
   auth.tsx            # Auth context
   detector.ts         # Drowsiness algorithm (ML Kit based)
-  alarm.ts            # expo-av + expo-haptics alarm
+  alarm.ts            # Audio, haptic, and spoken alerts
 ```
