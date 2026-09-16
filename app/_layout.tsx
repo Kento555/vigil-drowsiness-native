@@ -1,0 +1,39 @@
+import { useEffect } from 'react';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
+import { AuthProvider } from '../lib/auth';
+import { SettingsProvider } from '../lib/settings';
+import { colors, fontAssets } from '../lib/theme';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts(fontAssets);
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
+  return (
+    <AuthProvider>
+      <SettingsProvider>
+        <StatusBar style="dark" backgroundColor={colors.bg} />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="index" />
+          <Stack.Screen name="watch" />
+          <Stack.Screen name="drive-summary" />
+          <Stack.Screen name="history" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="privacy" />
+          <Stack.Screen name="privacy-policy" />
+          <Stack.Screen name="auth/sign-in" />
+        </Stack>
+      </SettingsProvider>
+    </AuthProvider>
+  );
+}

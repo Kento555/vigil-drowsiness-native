@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "VIGIL",
+    "slug": "vigil-drowsiness",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f2f2f3"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.vigil.drowsiness",
+      "infoPlist": {
+        "NSCameraUsageDescription": "VIGIL uses the camera to monitor your eyes and head position for drowsiness detection.",
+        "NSMicrophoneUsageDescription": "Microphone access is not used by VIGIL."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0e0d"
+      },
+      "package": "com.vigil.drowsiness",
+      "minSdkVersion": 26,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK"
+      ],
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-camera",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "VIGIL uses the camera to detect drowsiness.",
+          "enableMicrophonePermission": false
+        }
+      ],
+      "expo-font"
+    ],
+    "scheme": "vigil",
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    }
+  }
+}
