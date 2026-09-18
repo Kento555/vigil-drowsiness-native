@@ -1,0 +1,30 @@
+name: EAS Dev Build
+
+# Not chained after CI (unlike QA) - dev builds are for fast iteration on a
+# PR branch while you're still working, before the code is expected to pass
+# typecheck/security checks.
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build dev client on EAS
+        run: eas build --platform android --profile dev --non-interactive --no-wait

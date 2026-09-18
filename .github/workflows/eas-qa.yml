@@ -1,4 +1,4 @@
-name: EAS Preview Build
+name: EAS QA Build
 
 on:
   workflow_run:
@@ -10,6 +10,7 @@ jobs:
   build:
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    environment: qa
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,5 +28,5 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build preview APK on EAS
-        run: eas build --platform android --profile preview --non-interactive --no-wait
+      - name: Build QA APK on EAS
+        run: eas build --platform android --profile qa --non-interactive --no-wait

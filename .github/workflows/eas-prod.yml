@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: prod
     steps:
       - uses: actions/checkout@v4
 
@@ -31,4 +32,4 @@ jobs:
       # Waits for the build to finish so a follow-up `eas submit` step can be
       # added once Play Console + a service account key are configured.
       - name: Build production AAB on EAS
-        run: eas build --platform android --profile production --non-interactive --wait
+        run: eas build --platform android --profile prod --non-interactive --wait
