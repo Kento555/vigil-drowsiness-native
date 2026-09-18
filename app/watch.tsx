@@ -98,7 +98,7 @@ export default function WatchScreen() {
     }
   }, [dispatch, settings]);
 
-  const { detectFaces } = useFaceDetector({ performanceMode: 'fast', classifyFaces: true, trackingEnabled: true });
+  const { detectFaces } = useFaceDetector({ performanceMode: 'fast', classificationMode: 'all', trackingEnabled: true });
 
   const frameProcessor = useFrameProcessor(frame => {
     'worklet';
@@ -108,7 +108,9 @@ export default function WatchScreen() {
     runOnJS(handleFaceData)({
       leftEye: face.leftEyeOpenProbability ?? 1,
       rightEye: face.rightEyeOpenProbability ?? 1,
-      mouth: face.mouthOpenProbability ?? 0,
+      // ML Kit's Face type has no mouth-openness field, so yawn detection
+      // (lib/detector.ts's yawnThreshold) never actually triggers today.
+      mouth: 0,
       pitch: face.pitchAngle ?? 0,
       yaw: face.yawAngle ?? 0,
     });
