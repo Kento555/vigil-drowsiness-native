@@ -1,0 +1,30 @@
+name: EAS Production Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # Waits for the build to finish so a follow-up `eas submit` step can be
+      # added once Play Console + a service account key are configured.
+      - name: Build production AAB on EAS
+        run: eas build --platform android --profile production --non-interactive --wait

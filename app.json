@@ -10,7 +10,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.vigil.drowsiness",
       "infoPlist": {
-        "NSCameraUsageDescription": "VIGIL uses the camera to monitor your eyes and head position for drowsiness detection.",
+        "NSCameraUsageDescription": "VIGIL uses the camera to detect drowsiness.",
         "NSMicrophoneUsageDescription": "Microphone access is not used by VIGIL."
       }
     },
@@ -23,7 +23,11 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.VIBRATE",
-        "android.permission.WAKE_LOCK"
+        "android.permission.WAKE_LOCK",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "plugins": [
@@ -59,9 +63,11 @@
     ],
     "scheme": "vigil",
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "cf393eed-f5ca-4c9c-9e4b-67335762511e"
       }
-    }
+    },
+    "owner": "kento89"
   }
 }
