@@ -22,10 +22,6 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
     steps:
       - uses: actions/checkout@v4
 
@@ -37,33 +33,26 @@ jobs:
       - run: npm ci
       - uses: snyk/actions/setup@master
 
-      # Dependency vulnerabilities (npm packages). Non-blocking: results go
-      # to the Security tab rather than failing the PR, since flagging is
-      # the priority for now — see PR description for how to make this
-      # gate the merge once the existing dependency tree is triaged.
+      # Results go to app.snyk.io, not GitHub's Security tab — that requires
+      # GitHub Advanced Security, which isn't available on a free plan for a
+      # private repo. Non-blocking for now given the size of the existing
+      # dependency tree; drop continue-on-error once it's been triaged.
       - name: Snyk Open Source (dependency scan)
-        run: snyk test --severity-threshold=high --sarif-file-output=snyk-deps.sarif
+        run: snyk test --severity-threshold=high
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # Static analysis of our own source (SAST).
       - name: Snyk Code (static analysis)
-        run: snyk code test --sarif-file-output=snyk-code.sarif
+        run: snyk code test
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Upload dependency scan to Code Scanning
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: snyk-deps.sarif
-          category: snyk-open-source
-
-      - name: Upload static analysis to Code Scanning
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: snyk-code.sarif
-          category: snyk-code
+      # Pushes current results to the Snyk dashboard for ongoing tracking
+      # (new vulnerabilities disclosed later still get flagged there).
+      - name: Snyk monitor
+        run: snyk monitor
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
