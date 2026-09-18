@@ -1,9 +1,11 @@
 name: EAS Production Release
 
+# Manual-trigger only, no automatic tag-push trigger. GitHub's required-
+# reviewer environment protection needs a paid Team/Enterprise plan, which
+# isn't available here - this is the zero-cost equivalent: tag the release
+# as usual, then come to the Actions tab and manually run this workflow
+# against that tag, rather than a push alone kicking off a production build.
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch: {}
 
 jobs:
