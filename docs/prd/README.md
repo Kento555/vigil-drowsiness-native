@@ -14,4 +14,4 @@ each file's `## Change Log` section for its revision history.
 
 | Initiative | Status | File |
 |---|---|---|
-| _(none yet — added automatically as features are scoped)_ | | |
+| Play Store Redesign | Draft | [play-store-redesign.md](./play-store-redesign.md) |
