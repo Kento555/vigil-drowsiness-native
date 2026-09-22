@@ -1,0 +1,64 @@
+name: Maestro QA Smoke Test
+
+on:
+  workflow_run:
+    workflows: ["EAS QA Build"]
+    types: [completed]
+
+jobs:
+  test:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: qa
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Fetch latest QA build artifact URL
+        id: build-info
+        run: |
+          URL=$(eas build:list --platform android --profile qa --limit 1 --non-interactive --json | jq -r '.[0].artifacts.buildUrl')
+          if [ -z "$URL" ] || [ "$URL" == "null" ]; then
+            echo "Could not resolve a QA build artifact URL" >&2
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download QA APK
+        run: curl -fL -o app-qa.apk "${{ steps.build-info.outputs.url }}"
+
+      - name: Run Maestro flows on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          profile: Nexus 6
+          script: |
+            curl -Ls "https://get.maestro.mobile.dev" | bash
+            export PATH="$PATH:$HOME/.maestro/bin"
+            adb install -r app-qa.apk
+            maestro test .maestro/flows \
+              -e MAESTRO_QA_EMAIL="${{ secrets.MAESTRO_QA_EMAIL }}" \
+              -e MAESTRO_QA_PASSWORD="${{ secrets.MAESTRO_QA_PASSWORD }}"
+
+      - name: Upload Maestro report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-report
+          path: ~/.maestro/tests
+          if-no-files-found: ignore

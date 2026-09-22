@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Blueprint, Btn } from '../components/ui';
-import { scoreFor, formatDuration } from '../lib/history';
+import { alertPercent, bucketizeOffsets, formatDuration } from '../lib/history';
 import { colors, fonts } from '../lib/theme';
 
 type Marker = { offset: number; type: 'alarm' | 'drowsy' };
@@ -17,19 +18,11 @@ export default function DriveSummaryScreen() {
     try { return JSON.parse(params.markers ?? '[]'); } catch { return []; }
   }, [params.markers]);
 
-  const score = scoreFor(alarms, drowsy);
   const now = Date.now();
   const startTs = now - durationMs;
 
-  const bars = useMemo(() => {
-    const buckets = new Array(BUCKETS).fill('alert') as ('alert' | 'drowsy' | 'alarm')[];
-    for (const m of markers) {
-      const idx = Math.min(BUCKETS - 1, Math.floor(m.offset * BUCKETS));
-      if (m.type === 'alarm') buckets[idx] = 'alarm';
-      else if (buckets[idx] !== 'alarm') buckets[idx] = 'drowsy';
-    }
-    return buckets;
-  }, [markers]);
+  const bars = useMemo(() => bucketizeOffsets(markers, BUCKETS), [markers]);
+  const score = useMemo(() => alertPercent(bars), [bars]);
 
   const tip = alarms > 0
     ? 'An alarm means you need real rest, not just a break. On drives longer than an hour, stop every 45 minutes.'

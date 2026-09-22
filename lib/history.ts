@@ -11,8 +11,30 @@ export interface DriveSession {
   summary: string;
 }
 
-export function scoreFor(alarms: number, drowsy: number): number {
-  return Math.max(0, Math.min(100, 100 - alarms * 15 - drowsy * 8));
+export type BucketState = 'alert' | 'drowsy' | 'alarm';
+
+// Buckets a set of drowsy/alarm markers (offset 0..1 through the drive) into
+// `bucketCount` time slots, each holding the worst state seen in that slot.
+export function bucketizeOffsets(
+  events: { offset: number; type: 'drowsy' | 'alarm' }[],
+  bucketCount = 9
+): BucketState[] {
+  const buckets = new Array(bucketCount).fill('alert') as BucketState[];
+  for (const e of events) {
+    const idx = Math.min(bucketCount - 1, Math.max(0, Math.floor(e.offset * bucketCount)));
+    if (e.type === 'alarm') buckets[idx] = 'alarm';
+    else if (buckets[idx] !== 'alarm') buckets[idx] = 'drowsy';
+  }
+  return buckets;
+}
+
+// The alertness score is the share of the drive's timeline that stayed
+// alert — same buckets the Drive Summary timeline renders, so the headline
+// percentage always agrees with what the chart shows.
+export function alertPercent(buckets: BucketState[]): number {
+  if (buckets.length === 0) return 100;
+  const alertCount = buckets.filter(b => b === 'alert').length;
+  return Math.round((alertCount / buckets.length) * 100);
 }
 
 // Sessions aren't stored as rows — they're reconstructed from the
@@ -20,11 +42,14 @@ export function scoreFor(alarms: number, drowsy: number): number {
 export function computeDriveSessions(events: RemoteEvent[], limit = 20): DriveSession[] {
   const sorted = [...events].sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
   const sessions: DriveSession[] = [];
-  let open: { startTs: number; alarms: number; drowsy: number } | null = null;
+  let open: { startTs: number; alarms: number; drowsy: number; marks: { ts: number; type: 'drowsy' | 'alarm' }[] } | null = null;
 
   const close = (endTs: number) => {
     if (!open) return;
-    const score = scoreFor(open.alarms, open.drowsy);
+    const durationMs = Math.max(1, endTs - open.startTs);
+    const buckets = bucketizeOffsets(
+      open.marks.map(m => ({ offset: Math.min(1, Math.max(0, (m.ts - open!.startTs) / durationMs)), type: m.type }))
+    );
     sessions.push({
       id: `${open.startTs}`,
       startTs: open.startTs,
@@ -32,7 +57,7 @@ export function computeDriveSessions(events: RemoteEvent[], limit = 20): DriveSe
       durationMs: Math.max(0, endTs - open.startTs),
       alarms: open.alarms,
       drowsy: open.drowsy,
-      score,
+      score: alertPercent(buckets),
       summary: summarize(open.alarms, open.drowsy),
     });
     open = null;
@@ -42,13 +67,15 @@ export function computeDriveSessions(events: RemoteEvent[], limit = 20): DriveSe
     const ts = new Date(e.ts).getTime();
     if (e.type === 'session_start') {
       if (open) close(ts); // missing end — close it out at the next start
-      open = { startTs: ts, alarms: 0, drowsy: 0 };
+      open = { startTs: ts, alarms: 0, drowsy: 0, marks: [] };
     } else if (e.type === 'session_end') {
       close(ts);
     } else if (open && e.type === 'alarm') {
       open.alarms++;
+      open.marks.push({ ts, type: 'alarm' });
     } else if (open && e.type === 'drowsy') {
       open.drowsy++;
+      open.marks.push({ ts, type: 'drowsy' });
     }
   }
 

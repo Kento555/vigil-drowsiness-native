@@ -47,6 +47,7 @@ export interface DetectorUpdate {
   yawnMs: number;
   nodMs: number;
   yawnCount: number;
+  pitchDelta: number;
 }
 
 export class DrowsinessDetector {
@@ -58,7 +59,13 @@ export class DrowsinessDetector {
   private closedSince: number | null = null;
   private yawnOpenSince: number | null = null;
   private nodSince: number | null = null;
+  private nodLastTrueAt: number | null = null;
   private yawnTimestamps: number[] = [];
+
+  // ML Kit's per-frame pitch estimate is noisy enough to dip below the nod
+  // threshold for a single frame mid-nod; without this grace window every
+  // such dip would reset nodSince and the hold duration could never accrue.
+  private static readonly NOD_GRACE_MS = 500;
 
   constructor(config: DetectorConfig = DEFAULT_CONFIG) {
     this.config = config;
@@ -71,6 +78,7 @@ export class DrowsinessDetector {
     this.closedSince = null;
     this.yawnOpenSince = null;
     this.nodSince = null;
+    this.nodLastTrueAt = null;
     this.yawnTimestamps = [];
   }
 
@@ -88,11 +96,12 @@ export class DrowsinessDetector {
       if (this.calibrationCount >= this.config.calibrationFrames) {
         const sorted = [...this.pitchSamples].sort((a, b) => a - b);
         this.pitchBaseline = sorted[Math.floor(sorted.length / 2)];
+        console.log('[detector] calibrated', { pitchBaseline: this.pitchBaseline, samples: sorted });
       }
       return {
         state: 'calibrating', cause: null,
         leftEye, rightEye, pitch,
-        closureMs: 0, yawnMs: 0, nodMs: 0, yawnCount: 0,
+        closureMs: 0, yawnMs: 0, nodMs: 0, yawnCount: 0, pitchDelta: 0,
       };
     }
 
@@ -123,15 +132,21 @@ export class DrowsinessDetector {
     this.yawnTimestamps = this.yawnTimestamps.filter(t => now - t < 60_000);
     const yawnCount = this.yawnTimestamps.length;
 
-    // Head nod
-    const pitchDelta = pitch - this.pitchBaseline;
+    // Head nod — ML Kit's pitchAngle is positive when looking up, negative when
+    // looking down, so a drowsy head-drop shows up as pitch falling below baseline.
+    const pitchDelta = this.pitchBaseline - pitch;
     const nodding = pitchDelta > this.config.nodPitchDelta;
     let nodMs = 0;
     if (nodding) {
       if (this.nodSince === null) this.nodSince = now;
+      this.nodLastTrueAt = now;
+      nodMs = now - this.nodSince;
+    } else if (this.nodSince !== null && this.nodLastTrueAt !== null &&
+               now - this.nodLastTrueAt < DrowsinessDetector.NOD_GRACE_MS) {
       nodMs = now - this.nodSince;
     } else {
       this.nodSince = null;
+      this.nodLastTrueAt = null;
     }
 
     // State decision
@@ -152,6 +167,6 @@ export class DrowsinessDetector {
       state = 'drowsy'; cause = 'yawn';
     }
 
-    return { state, cause, leftEye, rightEye, pitch, closureMs, yawnMs, nodMs, yawnCount };
+    return { state, cause, leftEye, rightEye, pitch, closureMs, yawnMs, nodMs, yawnCount, pitchDelta };
   }
 }

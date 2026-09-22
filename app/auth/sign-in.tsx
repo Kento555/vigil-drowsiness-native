@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Btn } from '../../components/ui';
 import { useAuth } from '../../lib/auth';
 import { colors, fonts } from '../../lib/theme';
@@ -19,80 +21,91 @@ export default function SignInScreen() {
   const submit = async () => {
     if (!email || !password) return;
     setBusy(true);
-    if (mode === 'signin') {
-      const { error } = await signInWithPassword(email, password);
-      if (error) Alert.alert('Sign In Failed', error);
-    } else {
-      if (!name) { Alert.alert('Name required'); setBusy(false); return; }
-      const { error, needsConfirm } = await signUpWithPassword(email, password, name);
-      if (error) Alert.alert('Sign Up Failed', error);
-      else if (needsConfirm) {
-        Alert.alert('Check your email', 'Confirm your email address to finish signing up.');
-        setMode('signin');
+    try {
+      if (mode === 'signin') {
+        const { error } = await signInWithPassword(email, password);
+        if (error) Alert.alert('Sign In Failed', error);
+        else router.replace('/');
+      } else {
+        if (!name) { Alert.alert('Name required'); setBusy(false); return; }
+        const { error, needsConfirm } = await signUpWithPassword(email, password, name);
+        if (error) Alert.alert('Sign Up Failed', error);
+        else if (needsConfirm) {
+          Alert.alert('Check your email', 'Confirm your email address to finish signing up.');
+          setMode('signin');
+        } else {
+          router.replace('/');
+        }
       }
+    } catch (e) {
+      Alert.alert('Unexpected Error', String(e));
     }
     setBusy(false);
   };
 
   const handleGoogle = async () => {
     setBusy(true);
-    const { error } = await signInWithGoogle();
+    const { error, cancelled } = await signInWithGoogle();
     if (error) Alert.alert('Google Sign In Failed', error);
+    else if (!cancelled) router.replace('/');
     setBusy(false);
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <View style={styles.brand}>
-          <View style={styles.dot} />
-          <Text style={styles.brandText}>VIGIL</Text>
-        </View>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
+          <View style={styles.brand}>
+            <View style={styles.dot} />
+            <Text style={styles.brandText}>VIGIL</Text>
+          </View>
 
-        <View style={styles.tabs}>
-          <SegTab label="Sign in" active={mode === 'signin'} onPress={() => setMode('signin')} />
-          <SegTab label="Create account" active={mode === 'signup'} onPress={() => setMode('signup')} border />
-        </View>
+          <View style={styles.tabs}>
+            <SegTab label="Sign in" active={mode === 'signin'} onPress={() => setMode('signin')} />
+            <SegTab label="Create account" active={mode === 'signup'} onPress={() => setMode('signup')} border />
+          </View>
 
-        <Btn
-          title="Continue with Google"
-          variant="secondary"
-          height={56}
-          fontSize={15}
-          onPress={handleGoogle}
-          disabled={busy}
-          style={{ marginBottom: 20 }}
-          icon={<Text style={styles.googleG}>G</Text>}
-        />
+          <Btn
+            title="Continue with Google"
+            variant="secondary"
+            height={56}
+            fontSize={15}
+            onPress={handleGoogle}
+            disabled={busy}
+            style={{ marginBottom: 20 }}
+            icon={<Text style={styles.googleG}>G</Text>}
+          />
 
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
-          <View style={styles.dividerLine} />
-        </View>
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
 
-        {isSignUp && (
-          <Field label="Name" value={name} onChangeText={setName} placeholder="What should we call you?" />
-        )}
-        <Field label="E-mail" value={email} onChangeText={setEmail} placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" />
-        <Field label="Password" value={password} onChangeText={setPassword} placeholder="••••••••" secureTextEntry />
+          {isSignUp && (
+            <Field label="Name" value={name} onChangeText={setName} placeholder="What should we call you?" />
+          )}
+          <Field testID="sign-in-email" label="E-mail" value={email} onChangeText={setEmail} placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" />
+          <Field testID="sign-in-password" label="Password" value={password} onChangeText={setPassword} placeholder="••••••••" secureTextEntry />
 
-        <Btn
-          title={busy ? '…' : isSignUp ? 'CREATE ACCOUNT' : 'SIGN IN'}
-          variant="primary"
-          height={58}
-          fontSize={16}
-          onPress={submit}
-          disabled={busy}
-          style={{ marginBottom: 20 }}
-        />
+          <Btn
+            testID="sign-in-submit"
+            title={busy ? '…' : isSignUp ? 'CREATE ACCOUNT' : 'SIGN IN'}
+            variant="primary"
+            height={58}
+            fontSize={16}
+            onPress={submit}
+            disabled={busy}
+            style={{ marginBottom: 20 }}
+          />
 
-        <Text style={styles.footer}>
-          An account keeps your trip history when you change phone. Drowsiness detection itself
-          runs offline.
-        </Text>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <Text style={styles.footer}>
+            An account keeps your trip history when you change phone. Drowsiness detection itself
+            runs offline.
+          </Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -112,12 +125,13 @@ function SegTab({ label, active, onPress, border }: { label: string; active: boo
 
 function Field(props: {
   label: string; value: string; onChangeText: (t: string) => void; placeholder: string;
-  secureTextEntry?: boolean; keyboardType?: 'email-address'; autoCapitalize?: 'none';
+  secureTextEntry?: boolean; keyboardType?: 'email-address'; autoCapitalize?: 'none'; testID?: string;
 }) {
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{props.label}</Text>
       <TextInput
+        testID={props.testID}
         style={styles.input}
         value={props.value}
         onChangeText={props.onChangeText}
@@ -134,6 +148,7 @@ function Field(props: {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
+  flex: { flex: 1 },
   inner: { flexGrow: 1, padding: 24, paddingTop: 40 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 30 },
   dot: { width: 11, height: 11, backgroundColor: colors.accent },

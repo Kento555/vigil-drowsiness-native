@@ -28,5 +28,8 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      # --wait (not --no-wait) is required here: maestro-qa.yml chains off
+      # this workflow's completion via workflow_run, and needs the APK to
+      # actually exist by the time that fires.
       - name: Build QA APK on EAS
-        run: eas build --platform android --profile qa --non-interactive --no-wait
+        run: eas build --platform android --profile qa --non-interactive --wait

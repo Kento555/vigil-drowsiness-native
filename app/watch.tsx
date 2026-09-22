@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Camera, useCameraDevice, useFrameProcessor } from 'react-native-vision-camera';
 import { useFaceDetector } from 'react-native-vision-camera-face-detector';
-import { runOnJS } from 'react-native-reanimated';
+import { useRunOnJS } from 'react-native-worklets-core';
 import { useKeepAwake } from 'expo-keep-awake';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Redirect } from 'expo-router';
@@ -65,6 +65,8 @@ export default function WatchScreen() {
     if (user) syncEvent({ id: uuid(), ts: Date.now(), type, cause, durationMs }, user.id, DEVICE_LABEL).catch(() => {});
   }, [user]);
 
+  const lastPitchLogRef = useRef(0);
+
   const handleFaceData = useCallback((data: FaceData | null) => {
     setFaceFound(!!data);
     if (!data) return;
@@ -76,6 +78,11 @@ export default function WatchScreen() {
       pitchAngle: data.pitch,
       yawAngle: data.yaw,
     }, now);
+
+    if (now - lastPitchLogRef.current > 300) {
+      lastPitchLogRef.current = now;
+      console.log('[watch] pitch', { rawPitch: data.pitch, pitchDelta: update.pitchDelta, nodMs: update.nodMs, state: update.state });
+    }
 
     const prev = lastStateRef.current;
     const cur = update.state;
@@ -99,13 +106,14 @@ export default function WatchScreen() {
   }, [dispatch, settings]);
 
   const { detectFaces } = useFaceDetector({ performanceMode: 'fast', classificationMode: 'all', trackingEnabled: true });
+  const handleFaceDataJS = useRunOnJS(handleFaceData, [handleFaceData]);
 
   const frameProcessor = useFrameProcessor(frame => {
     'worklet';
     const faces = detectFaces(frame);
-    if (!faces.length) { runOnJS(handleFaceData)(null); return; }
+    if (!faces.length) { handleFaceDataJS(null); return; }
     const face = faces[0];
-    runOnJS(handleFaceData)({
+    handleFaceDataJS({
       leftEye: face.leftEyeOpenProbability ?? 1,
       rightEye: face.rightEyeOpenProbability ?? 1,
       // ML Kit's Face type has no mouth-openness field, so yawn detection
@@ -114,7 +122,7 @@ export default function WatchScreen() {
       pitch: face.pitchAngle ?? 0,
       yaw: face.yawAngle ?? 0,
     });
-  }, [handleFaceData]);
+  }, [handleFaceDataJS]);
 
   const stopWatching = useCallback(async () => {
     if (alarmActiveRef.current) { await stopAlarm(); alarmActiveRef.current = false; }
@@ -154,24 +162,6 @@ export default function WatchScreen() {
 
   if (!user) return <Redirect href="/auth/sign-in" />;
 
-  if (state === 'alarm') {
-    return <AlarmOverlay dismissStep={dismissStep} onTap={tapDismiss} />;
-  }
-
-  if (screenOff) {
-    return (
-      <PocketMode
-        revealed={pocketRevealed}
-        onTap={revealPocket}
-        state={state}
-        elapsedMin={elapsedMin}
-        drowsyCount={drowsyRef.current}
-        onKeepWatching={() => setPocketRevealed(false)}
-        onStop={stopWatching}
-      />
-    );
-  }
-
   const lookLabel = state === 'drowsy' ? 'DROWSY' : state === 'calibrating' ? 'CHECKING' : 'ALERT';
   const sentence = state === 'drowsy'
     ? 'Your eyes are drooping. Sit up and get some air if you can.'
@@ -179,7 +169,10 @@ export default function WatchScreen() {
     ? 'Finding your baseline. Keep your eyes on the road.'
     : `Eyes open, head steady. Watching for ${elapsedMin} minute${elapsedMin === 1 ? '' : 's'}.`;
 
+  // Pocket/alarm modes render as overlays, not alternate returns — the camera
+  // and its frame processor must stay mounted or detection stops dead.
   return (
+    <>
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <View style={styles.brand}>
@@ -228,6 +221,25 @@ export default function WatchScreen() {
         </View>
       </View>
     </SafeAreaView>
+    {screenOff && (
+      <View style={StyleSheet.absoluteFill}>
+        <PocketMode
+          revealed={pocketRevealed}
+          onTap={revealPocket}
+          state={state}
+          elapsedMin={elapsedMin}
+          drowsyCount={drowsyRef.current}
+          onKeepWatching={() => setPocketRevealed(false)}
+          onStop={stopWatching}
+        />
+      </View>
+    )}
+    {state === 'alarm' && (
+      <View style={StyleSheet.absoluteFill}>
+        <AlarmOverlay dismissStep={dismissStep} onTap={tapDismiss} />
+      </View>
+    )}
+    </>
   );
 }
 

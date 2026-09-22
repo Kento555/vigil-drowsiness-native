@@ -1,0 +1,6 @@
+appId: com.vigil.drowsiness
+---
+- launchApp:
+    clearState: true
+- assertVisible: "VIGIL"
+- assertVisible: "SIGN IN"

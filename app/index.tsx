@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera } from 'react-native-vision-camera';
 import { router, Redirect, useFocusEffect } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
@@ -16,6 +17,10 @@ export default function HomeScreen() {
   const { settings, update, onboardingComplete, loaded } = useSettings();
   const [showDisclosure, setShowDisclosure] = useState(false);
   const [lastDrive, setLastDrive] = useState<DriveSession | null>(null);
+
+  useEffect(() => {
+    console.log('[index] render', { hasUser: !!user, onboardingComplete, loaded });
+  }, [user, onboardingComplete, loaded]);
 
   useFocusEffect(useCallback(() => {
     if (!user) return;
@@ -35,9 +40,16 @@ export default function HomeScreen() {
   };
 
   const allowCamera = async () => {
-    const result = await Camera.requestCameraPermission();
-    setShowDisclosure(false);
-    if (result === 'granted') router.push('/watch');
+    console.log('[index] allowCamera tapped');
+    try {
+      const result = await Camera.requestCameraPermission();
+      console.log('[index] requestCameraPermission result', result);
+      setShowDisclosure(false);
+      if (result === 'granted') router.push('/watch');
+    } catch (e) {
+      console.log('[index] requestCameraPermission threw', e);
+      setShowDisclosure(false);
+    }
   };
 
   if (loaded && !onboardingComplete) return <Redirect href="/onboarding" />;
@@ -53,10 +65,15 @@ export default function HomeScreen() {
           <Text style={styles.brandText}>VIGIL</Text>
         </View>
         <View style={styles.headerRight}>
-          <Text style={styles.username}>{displayName.toUpperCase()}</Text>
+          <TouchableOpacity onPress={() => router.push('/profile')} hitSlop={10} style={styles.avatarBtn} testID="profile-icon">
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{(displayName.charAt(0) || '?').toUpperCase()}</Text>
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/settings')} hitSlop={10}>
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth={1.5} strokeLinecap="round">
-              <Path d="M4 7h16M4 17h16" />
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+              <Path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82A1.65 1.65 0 003.09 13H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" />
             </Svg>
           </TouchableOpacity>
         </View>
@@ -113,7 +130,12 @@ const styles = StyleSheet.create({
   dot: { width: 11, height: 11, backgroundColor: colors.accent },
   brandText: { fontFamily: fonts.headingBold, fontSize: 17, letterSpacing: 2, color: colors.text },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  username: { fontFamily: fonts.heading, fontSize: 11, letterSpacing: 1.5, color: colors.muted },
+  avatarBtn: { borderRadius: 15 },
+  avatar: {
+    width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: colors.dividerStrong,
+    backgroundColor: colors.accentPale, alignItems: 'center', justifyContent: 'center',
+  },
+  avatarText: { fontFamily: fonts.headingBold, fontSize: 13, color: colors.accentDark },
   body: { paddingHorizontal: 24, paddingBottom: 24 },
   readyCard: { padding: 24, marginBottom: 18 },
   kicker: { fontFamily: fonts.heading, fontSize: 11, letterSpacing: 3, color: colors.muted, marginBottom: 10 },

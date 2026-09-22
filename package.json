@@ -7,12 +7,14 @@
     "android": "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "maestro": "maestro test .maestro/flows"
   },
   "dependencies": {
     "@expo-google-fonts/barlow": "^0.4.1",
     "@expo-google-fonts/barlow-condensed": "^0.4.1",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-google-signin/google-signin": "^16.1.5",
     "@supabase/supabase-js": "^2.105.4",
     "expo": "~57.0.23",
     "expo-asset": "~57.0.17",

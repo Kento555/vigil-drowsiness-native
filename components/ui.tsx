@@ -38,7 +38,7 @@ type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'plain' | 'danger';
 
 export function Btn({
   title, onPress, variant = 'plain', height = 52, fontSize = 15, corners = false,
-  disabled, style, textStyle, icon,
+  disabled, style, textStyle, icon, testID,
 }: {
   title: string;
   onPress?: () => void;
@@ -50,10 +50,12 @@ export function Btn({
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   icon?: React.ReactNode;
+  testID?: string;
 }) {
   const variantStyle = VARIANT_STYLES[variant];
   return (
     <Pressable
+      testID={testID}
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [

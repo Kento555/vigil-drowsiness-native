@@ -1,0 +1,13 @@
+appId: com.vigil.drowsiness
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "sign-in-email"
+- inputText: "${MAESTRO_QA_EMAIL}"
+- tapOn:
+    id: "sign-in-password"
+- inputText: "${MAESTRO_QA_PASSWORD}"
+- tapOn:
+    id: "sign-in-submit"
+- assertVisible: "Vigil watches your eyes so you can watch the road."

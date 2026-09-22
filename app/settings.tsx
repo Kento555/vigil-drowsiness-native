@@ -1,5 +1,6 @@
 import React from 'react';
-import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Redirect } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { PresetSegmented, Toggle, PRESET_COPY } from '../components/ui';
