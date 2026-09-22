@@ -28,13 +28,6 @@
     "plugins": [
       "expo-router",
       [
-        "expo-camera",
-        {
-          "microphonePermission": false,
-          "recordAudioAndroid": false
-        }
-      ],
-      [
         "react-native-vision-camera",
         {
           "cameraPermissionText": "VIGIL uses the camera to detect drowsiness.",
